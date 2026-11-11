@@ -17,7 +17,7 @@ export function LiquidGlassEffects(props: LiquidGlassEffectsProps) {
     return () => {
       controller.destroy()
     }
-  }, [props.selector, props.excludeSelector])
+  }, [props.selector, props.excludeSelector, props.root])
 
   return null
 }

@@ -1,28 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { stepSpring, createSpring } from '../dist/index.js'
 
-function stepSpring(spring, dt, stiffness = 300, damping = 24) {
-  const clampedDt = Math.min(dt, 0.032)
-  const steps = Math.ceil(clampedDt * 120)
-  const subDt = clampedDt / steps
-
-  for (let i = 0; i < steps; i++) {
-    const force = (spring.target - spring.current) * stiffness - spring.velocity * damping
-    spring.velocity += force * subDt
-    spring.current += spring.velocity * subDt
-  }
-
-  const delta = Math.abs(spring.target - spring.current)
-  const speed = Math.abs(spring.velocity)
-
-  if (delta < 0.001 && speed < 0.001) {
-    spring.current = spring.target
-    spring.velocity = 0
-    return false
-  }
-
-  return true
-}
+test('Spring Physics: createSpring initializes default values', () => {
+  const spring = createSpring(0)
+  assert.equal(spring.current, 0)
+  assert.equal(spring.target, 0)
+  assert.equal(spring.velocity, 0)
+})
 
 test('Spring Physics: Starts at initial value', () => {
   const spring = { current: 0, target: 1, velocity: 0 }

@@ -119,26 +119,35 @@ export function createButtonPaintReader() {
       const parentStyle = getComputedStyle(parent)
       const bg = parseColor(parentStyle.backgroundColor)
 
-      if (parentStyle.backgroundImage !== 'none' || parent.matches('video, canvas')) {
-        if (ownColor[3] >= 0.99) {
-          layers.push(ownColor)
-          break
-        }
-        // Unknown photographic or video scene
-        return null
+      if (bg[3] > 0.02) {
+        layers.push(bg)
+        if (bg[3] >= 0.99) break
       }
-
-      layers.push(bg)
-      if (bg[3] >= 0.99) break
     }
 
-    const isDark =
-      document.documentElement.dataset.theme === 'dark' ||
-      window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    const docTheme = (document.documentElement.dataset.theme || '').toLowerCase()
+    const isDarkTheme =
+      docTheme === 'dark' ||
+      docTheme === 'neon' ||
+      document.documentElement.classList.contains('dark') ||
+      Boolean(window.matchMedia?.('(prefers-color-scheme: dark)').matches)
 
-    let scene: RGB = isDark ? [0.08, 0.12, 0.16] : [0.97, 0.98, 0.99]
+    let baseScene: RGB
+    if (docTheme === 'mesh') {
+      baseScene = [0.98, 0.86, 0.93]
+    } else if (docTheme === 'neon') {
+      baseScene = [0.06, 0.08, 0.14]
+    } else if (isDarkTheme) {
+      baseScene = [0.08, 0.12, 0.16]
+    } else {
+      baseScene = [0.97, 0.98, 0.99]
+    }
+
+    let scene: RGB = baseScene
     for (const layer of layers.reverse()) {
-      scene = mix(layer, scene)
+      if (layer[3] > 0.02) {
+        scene = mix(layer, scene)
+      }
     }
 
     // Determine face color: inherit authored background tint or fallback to scene
@@ -153,12 +162,15 @@ export function createButtonPaintReader() {
     const maxRadius = Math.min(element.clientHeight / 2, element.clientWidth / 2)
     const radius = Math.min(rawRadius, maxRadius)
 
+    const optics = (element as { __liquidGlassOptics?: import('./types').GlassOpticsConfig }).__liquidGlassOptics
+
     return {
       paint: {
         face,
         scene,
         radius,
         dark: luminance(scene) < 0.35,
+        optics,
       },
       ink,
     }

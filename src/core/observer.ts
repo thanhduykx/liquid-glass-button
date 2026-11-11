@@ -193,9 +193,14 @@ export class LiquidGlassController {
       return
     }
 
-    const canvas = document.createElement('canvas')
-    canvas.className = 'button-glass__surface'
-    canvas.setAttribute('aria-hidden', 'true')
+    // Reuse existing surface canvas if already present to prevent duplicate elements
+    let canvas = element.querySelector<HTMLCanvasElement>(':scope > .button-glass__surface')
+    if (!canvas) {
+      canvas = document.createElement('canvas')
+      canvas.className = 'button-glass__surface'
+      canvas.setAttribute('aria-hidden', 'true')
+      element.prepend(canvas)
+    }
 
     const face: ButtonFaceTile = {
       canvas,
@@ -216,7 +221,6 @@ export class LiquidGlassController {
       element.dataset.glassButtonPosition = ''
     }
 
-    element.prepend(canvas)
     this.resizeObserver?.observe(element)
     this.intersectionObserver?.observe(element)
     this.invalidate(element)
@@ -279,6 +283,13 @@ export class LiquidGlassController {
           continue
         }
 
+        if (element.offsetWidth === 0 || element.offsetHeight === 0) {
+          // Element not yet laid out; preserve in pending and retry next frame
+          this.pending.add(element)
+          needsNextFrame = true
+          continue
+        }
+
         const measured = this.readPaint(element)
         if (!measured) {
           face.paint = null
@@ -337,8 +348,7 @@ export class LiquidGlassController {
     return (
       element.matches(selector) &&
       !element.closest(exclusions) &&
-      !element.matches(':disabled, [aria-disabled="true"], [hidden]') &&
-      (element.textContent?.trim().length ?? 0) <= 120
+      !element.matches(':disabled, [aria-disabled="true"], [hidden]')
     )
   }
 

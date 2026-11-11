@@ -58,9 +58,16 @@ export const LiquidGlassButton = forwardRef<HTMLButtonElement, LiquidGlassButton
       const el = internalRef.current
       if (!el) return
 
+      if (optics) {
+        ;(el as { __liquidGlassOptics?: typeof optics }).__liquidGlassOptics = optics
+      } else {
+        delete (el as { __liquidGlassOptics?: typeof optics }).__liquidGlassOptics
+      }
+
       const controller = getSharedController()
       if (controller) {
         controller.register(el)
+        controller.invalidate(el)
       }
 
       return () => {
@@ -68,7 +75,7 @@ export const LiquidGlassButton = forwardRef<HTMLButtonElement, LiquidGlassButton
           controller.forget(el)
         }
       }
-    }, [])
+    }, [optics])
 
     const variantClass = variant !== 'default' ? `liquid-glass-btn--${variant}` : ''
     const sizeClass = `liquid-glass-btn--${size}`

@@ -18,6 +18,8 @@ export interface ButtonGlassPaint {
   radius: number
   /** Whether the underlying background is dark */
   dark: boolean
+  /** Physical optics configuration overrides */
+  optics?: GlassOpticsConfig
 }
 
 /**

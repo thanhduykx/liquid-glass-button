@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { LiquidGlassButton } from '../components/LiquidGlassButton'
+import type { GlassOpticsConfig } from '../core/types'
 
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark' | 'mesh' | 'neon'>('light')
@@ -7,6 +8,13 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [customRadius, setCustomRadius] = useState<number | 'pill'>('pill')
   const [pointerCoords, setPointerCoords] = useState<[number, number]>([0, 0])
+  const [optics, setOptics] = useState<GlassOpticsConfig>({
+    ior: 1.518,
+    specularPower: 14.0,
+    lipGlow: 1.0,
+    fresnelStrength: 0.48,
+    bevelIntensity: 1.0,
+  })
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -60,11 +68,12 @@ export default function App() {
         </p>
 
         <div className="button-group">
-          <LiquidGlassButton onClick={() => setClickCount((c) => c + 1)}>
+          <LiquidGlassButton optics={optics} onClick={() => setClickCount((c) => c + 1)}>
             Default Glass
           </LiquidGlassButton>
 
           <LiquidGlassButton
+            optics={optics}
             variant="primary"
             onClick={() => setClickCount((c) => c + 1)}
             leadingIcon={
@@ -77,6 +86,7 @@ export default function App() {
           </LiquidGlassButton>
 
           <LiquidGlassButton
+            optics={optics}
             variant="accent"
             onClick={() => setClickCount((c) => c + 1)}
             leadingIcon={
@@ -89,6 +99,7 @@ export default function App() {
           </LiquidGlassButton>
 
           <LiquidGlassButton
+            optics={optics}
             variant="danger"
             onClick={() => setClickCount((c) => c + 1)}
             trailingIcon={
@@ -100,13 +111,14 @@ export default function App() {
             Destructive
           </LiquidGlassButton>
 
-          <LiquidGlassButton variant="ghost" onClick={() => setClickCount((c) => c + 1)}>
+          <LiquidGlassButton optics={optics} variant="ghost" onClick={() => setClickCount((c) => c + 1)}>
             Ghost Material
           </LiquidGlassButton>
 
           <LiquidGlassButton disabled>Disabled Glass</LiquidGlassButton>
 
           <LiquidGlassButton
+            optics={optics}
             loading={loading}
             onClick={() => {
               setLoading(true)
@@ -161,15 +173,89 @@ export default function App() {
         </div>
 
         <div className="button-group">
-          <LiquidGlassButton size="sm" radius={customRadius} variant="primary">
+          <LiquidGlassButton optics={optics} size="sm" radius={customRadius} variant="primary">
             Small (32px)
           </LiquidGlassButton>
-          <LiquidGlassButton size="md" radius={customRadius} variant="primary">
+          <LiquidGlassButton optics={optics} size="md" radius={customRadius} variant="primary">
             Medium (44px)
           </LiquidGlassButton>
-          <LiquidGlassButton size="lg" radius={customRadius} variant="primary">
+          <LiquidGlassButton optics={optics} size="lg" radius={customRadius} variant="primary">
             Large (52px)
           </LiquidGlassButton>
+        </div>
+      </section>
+
+      {/* Real-time Physical Optics Tuner */}
+      <section className="card">
+        <h2>Physical Optics Tuner</h2>
+        <p className="card-desc">
+          Live shader parameters calculated in real-time by the WebGL2 GPU engine.
+        </p>
+
+        <div className="optics-grid">
+          <div className="optics-control">
+            <div className="optics-header">
+              <span>Snell Refractive Index (IOR)</span>
+              <strong>{optics.ior?.toFixed(3)}</strong>
+            </div>
+            <input
+              type="range"
+              min="1.0"
+              max="2.0"
+              step="0.01"
+              value={optics.ior}
+              onChange={(e) => setOptics((prev) => ({ ...prev, ior: parseFloat(e.target.value) }))}
+            />
+            <span className="optics-hint">Crown Glass = 1.518, Diamond = 2.417, Water = 1.333</span>
+          </div>
+
+          <div className="optics-control">
+            <div className="optics-header">
+              <span>Specular Softbox Exponent</span>
+              <strong>{optics.specularPower?.toFixed(1)}</strong>
+            </div>
+            <input
+              type="range"
+              min="4"
+              max="32"
+              step="1"
+              value={optics.specularPower}
+              onChange={(e) => setOptics((prev) => ({ ...prev, specularPower: parseFloat(e.target.value) }))}
+            />
+            <span className="optics-hint">Higher values create tighter, more focused glossy glints</span>
+          </div>
+
+          <div className="optics-control">
+            <div className="optics-header">
+              <span>Rim Lip Glow</span>
+              <strong>{optics.lipGlow?.toFixed(2)}x</strong>
+            </div>
+            <input
+              type="range"
+              min="0.2"
+              max="2.0"
+              step="0.05"
+              value={optics.lipGlow}
+              onChange={(e) => setOptics((prev) => ({ ...prev, lipGlow: parseFloat(e.target.value) }))}
+            />
+            <span className="optics-hint">Amplifies Apple's signature outer convex edge highlight</span>
+          </div>
+
+          <div className="optics-control">
+            <div className="optics-header">
+              <span>Fresnel Reflectance Multiplier</span>
+              <strong>{optics.fresnelStrength?.toFixed(2)}</strong>
+            </div>
+            <input
+              type="range"
+              min="0.1"
+              max="1.0"
+              step="0.02"
+              value={optics.fresnelStrength}
+              onChange={(e) => setOptics((prev) => ({ ...prev, fresnelStrength: parseFloat(e.target.value) }))}
+            />
+            <span className="optics-hint">Controls grazing angle reflectivity based on Schlick's Law</span>
+          </div>
         </div>
       </section>
 

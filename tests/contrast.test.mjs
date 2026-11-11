@@ -1,36 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-
-// Mathematical calculations matching core/paint.ts
-function luminance(rgb) {
-  const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4))
-  return 0.2126 * toLinear(rgb[0]) + 0.7152 * toLinear(rgb[1]) + 0.0722 * toLinear(rgb[2])
-}
-
-function glassContrast(a, b) {
-  const lumA = luminance(a)
-  const lumB = luminance(b)
-  return (Math.max(lumA, lumB) + 0.05) / (Math.min(lumA, lumB) + 0.05)
-}
-
-function chooseGlassInk(declared, face) {
-  if (glassContrast(declared, face) >= 4.5) {
-    return declared
-  }
-  const candidates = [
-    [0.075, 0.16, 0.2],
-    [0.95, 0.98, 1.0],
-  ]
-  const branded = candidates.slice().sort((a, b) => glassContrast(b, face) - glassContrast(a, face))
-  if (glassContrast(branded[0], face) >= 4.5) {
-    return branded[0]
-  }
-  const extremes = [
-    [0, 0, 0],
-    [1, 1, 1],
-  ]
-  return extremes.sort((a, b) => glassContrast(b, face) - glassContrast(a, face))[0]
-}
+import { luminance, glassContrast, chooseGlassInk, mix, cssColor } from '../dist/index.js'
 
 test('WCAG contrast: Relative luminance of pure white is 1.0 and black is 0.0', () => {
   assert.equal(Math.round(luminance([1, 1, 1]) * 100) / 100, 1.0)
@@ -70,4 +40,11 @@ test('chooseGlassInk: Fixes low contrast declared ink automatically', () => {
   const whiteFace = [1, 1, 1]
   const chosen = chooseGlassInk(unsafeInk, whiteFace)
   assert.ok(glassContrast(chosen, whiteFace) >= 4.5)
+})
+
+test('Color utils: mix and cssColor produce valid mathematical outputs', () => {
+  const blended = mix([1, 0, 0, 0.5], [0, 0, 1])
+  assert.deepEqual(blended, [0.5, 0, 0.5])
+  assert.equal(cssColor([1, 0, 0]), 'rgb(255 0 0)')
+  assert.equal(cssColor([0, 0.5, 1]), 'rgb(0 128 255)')
 })

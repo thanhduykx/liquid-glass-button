@@ -188,11 +188,22 @@ export default function App() {
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Sizing preset (32px, 44px, 52px min-height) |
 | `radius` | `number \| 'pill'` | `'pill'` | Corner radius in pixels, or `'pill'` (999px) |
 | `tint` | `string` | `undefined` | Custom CSS background color / tint |
+| `optics` | `GlassOpticsConfig` | `undefined` | Real-time physical optics overrides (IOR, specular, lip glow, Fresnel) |
 | `leadingIcon` | `ReactNode` | `undefined` | Icon or element rendered before button label |
 | `trailingIcon` | `ReactNode` | `undefined` | Icon or element rendered after button label |
 | `loading` | `boolean` | `false` | Displays an accessible glass spinner |
 | `disabled` | `boolean` | `false` | Disables interaction and relaxes glass effect |
 | `children` | `ReactNode` | `undefined` | Native text or content (stays crisp, unrasterized) |
+
+### `GlassOpticsConfig` (Physical Shader Parameters)
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `ior` | `number` | `1.518` | Snell's Law refractive index (Crown glass: 1.518, Diamond: 2.417, Water: 1.333) |
+| `specularPower` | `number` | `14.0` | Exponent for the interactive cursor-tracking specular highlight |
+| `lipGlow` | `number` | `1.0` | Multiplier for Apple's signature convex perimeter rim lip glow |
+| `fresnelStrength` | `number` | `0.48` | Intensity of Schlick's Fresnel grazing-angle reflectivity |
+| `bevelIntensity` | `number` | `1.0` | Shadow depth factor along the 3D dome curvature |
 
 ### `LiquidGlassController` Options
 

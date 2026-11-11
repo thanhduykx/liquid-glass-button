@@ -43,6 +43,11 @@ uniform vec3 scene;        // Backdrop scene color behind button [r, g, b]
 uniform float radius;      // Corner radius in pixels
 uniform float press;       // Spring pressed state [0.0..1.0]
 uniform float dark;        // Whether scene is in dark mode (1.0 = dark, 0.0 = light)
+uniform float ior;             // Index of refraction (default 1.518)
+uniform float specularPower;   // Specular exponent (default 14.0)
+uniform float lipGlow;         // Rim lip glow brightness (default 1.0)
+uniform float bevelIntensity;  // Bevel curve intensity (default 1.0)
+uniform float fresnelStrength; // Fresnel reflection strength (default 0.48)
 
 out vec4 pixel;
 
@@ -88,8 +93,8 @@ void main() {
   // Incident ray from camera towards surface: (0, 0, -1)
   vec3 incident = vec3(0.0, 0.0, -1.0);
 
-  // Snell's Law refraction with Crown Glass IOR = 1.518 (eta = 1.0 / 1.518)
-  vec3 ray = refract(incident, n, 1.0 / 1.518);
+  // Snell's Law refraction with Crown Glass IOR = 1.518 (eta = 1.0 / ior)
+  vec3 ray = refract(incident, n, 1.0 / max(1.0, ior));
 
   // Reflection vector
   vec3 reflection = reflect(incident, n);
@@ -102,7 +107,7 @@ void main() {
 
   // Environmental ambient lighting transmission
   vec3 environment = mix(scene, vec3(1.0), 0.24 + 0.24 * max(0.0, reflection.y));
-  vec3 color = mix(face, environment, fresnel * 0.48);
+  vec3 color = mix(face, environment, fresnel * fresnelStrength);
 
   // Bevel factor (1.0 at outer edge, 0.0 at flat center plateau)
   float bevel = 1.0 - h;
@@ -110,16 +115,16 @@ void main() {
   // Specular softbox highlight: reacts dynamically to light position (cursor tracking)
   vec3 lightDir = normalize(vec3(light, 1.7));
   float specDot = max(0.0, dot(reflection, lightDir));
-  float softbox = pow(specDot, 14.0);
+  float softbox = pow(specDot, max(1.0, specularPower));
   color += vec3(softbox * bevel * 0.17 * (1.0 + press * 0.2));
 
   // Outer convex edge lip highlighting: gives Apple's characteristic sharp glass edge
   float lip = exp(-pow((d + 0.8) / 0.9, 2.0));
   float key = 0.22 + 0.62 * max(0.0, n.y) + 0.16 * max(0.0, -n.x);
-  color = mix(color, vec3(1.0), lip * key * mix(0.63, 0.32, dark));
+  color = mix(color, vec3(1.0), lip * key * lipGlow * mix(0.63, 0.32, dark));
 
   // Subtle interior darkening on the bevel curve
-  color *= 1.0 - bevel * 0.045;
+  color *= 1.0 - bevel * 0.045 * bevelIntensity;
 
   // Dispersion chromatic fringe along refractive bend
   color += vec3(ray.x * 0.0003, 0.0, -ray.x * 0.0003) * bevel;

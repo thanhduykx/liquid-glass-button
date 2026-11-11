@@ -1,16 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-
-const shaderSource = readFileSync('src/core/shader.ts', 'utf-8')
+import { VERTEX_SHADER, FRAGMENT_SHADER } from '../dist/index.js'
 
 test('GLSL Shaders: Valid WebGL2 GLSL ES 3.00 specification', () => {
-  assert.ok(shaderSource.includes('#version 300 es'))
-  assert.ok(shaderSource.includes('precision highp float;'))
-  assert.ok(shaderSource.includes('out vec4 pixel;'))
+  assert.ok(VERTEX_SHADER.includes('#version 300 es'))
+  assert.ok(FRAGMENT_SHADER.includes('#version 300 es'))
+  assert.ok(FRAGMENT_SHADER.includes('precision highp float;'))
+  assert.ok(FRAGMENT_SHADER.includes('out vec4 pixel;'))
 })
 
-test('GLSL Shaders: All mandatory uniforms are defined', () => {
+test('GLSL Shaders: All mandatory uniforms are defined in FRAGMENT_SHADER', () => {
   const requiredUniforms = [
     'uniform vec2 resolution;',
     'uniform vec2 size;',
@@ -20,28 +19,36 @@ test('GLSL Shaders: All mandatory uniforms are defined', () => {
     'uniform float radius;',
     'uniform float press;',
     'uniform float dark;',
+    'uniform float ior;',
+    'uniform float specularPower;',
+    'uniform float lipGlow;',
+    'uniform float bevelIntensity;',
+    'uniform float fresnelStrength;',
   ]
 
   for (const uniform of requiredUniforms) {
     assert.ok(
-      shaderSource.includes(uniform),
-      `Missing required uniform: ${uniform}`
+      FRAGMENT_SHADER.includes(uniform),
+      `Missing required uniform in FRAGMENT_SHADER: ${uniform}`
     )
   }
 })
 
-test('Optical Physics: Snell Law refraction uses optical crown glass index (1.518)', () => {
-  // 1.0 / 1.518 corresponds to crown glass / borosilicate glass
+test('Optical Physics: Snell Law refraction uses configurable IOR (default optical crown glass 1.518)', () => {
   assert.ok(
-    shaderSource.includes('1.0 / 1.518') || shaderSource.includes('1./1.518'),
-    'Shader must calculate refraction with IOR 1.518'
+    FRAGMENT_SHADER.includes('refract(incident, n, 1.0 / max(1.0, ior))'),
+    'Shader must calculate Snell refraction using ray = refract(incident, n, 1.0 / max(1.0, ior))'
   )
 })
 
 test('Optical Physics: Schlick Fresnel approximation equation is present', () => {
   assert.ok(
-    shaderSource.includes('0.04 + 0.96 * pow(') || shaderSource.includes('.04+.96*pow('),
+    FRAGMENT_SHADER.includes('0.04 + 0.96 * pow(') || FRAGMENT_SHADER.includes('.04+.96*pow('),
     'Shader must include Schlick Fresnel reflectance equation'
+  )
+  assert.ok(
+    FRAGMENT_SHADER.includes('fresnel * fresnelStrength'),
+    'Shader must scale Fresnel reflection by configurable fresnelStrength'
   )
 })
 

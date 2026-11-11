@@ -113,6 +113,11 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
     press: gl.getUniformLocation(program, 'press'),
     light: gl.getUniformLocation(program, 'light'),
     dark: gl.getUniformLocation(program, 'dark'),
+    ior: gl.getUniformLocation(program, 'ior'),
+    specularPower: gl.getUniformLocation(program, 'specularPower'),
+    lipGlow: gl.getUniformLocation(program, 'lipGlow'),
+    bevelIntensity: gl.getUniformLocation(program, 'bevelIntensity'),
+    fresnelStrength: gl.getUniformLocation(program, 'fresnelStrength'),
   }
 
   return {
@@ -142,6 +147,14 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
       gl.uniform1f(uniforms.press, pressed)
       gl.uniform1f(uniforms.dark, paint.dark ? 1 : 0)
       gl.uniform2f(uniforms.light, light[0], light[1])
+
+      // Physical optics parameters (default to optical crown glass standard)
+      const optics = paint.optics || {}
+      gl.uniform1f(uniforms.ior, optics.ior ?? 1.518)
+      gl.uniform1f(uniforms.specularPower, optics.specularPower ?? 14.0)
+      gl.uniform1f(uniforms.lipGlow, optics.lipGlow ?? 1.0)
+      gl.uniform1f(uniforms.bevelIntensity, optics.bevelIntensity ?? 1.0)
+      gl.uniform1f(uniforms.fresnelStrength, optics.fresnelStrength ?? 0.48)
 
       gl.drawArrays(gl.TRIANGLES, 0, 3)
 
