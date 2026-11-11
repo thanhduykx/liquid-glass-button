@@ -16,6 +16,8 @@ const EXPECTED_EXPORTS = [
   'createButtonPaintReader',
   'createSpring',
   'stepSpring',
+  'stepLiquidPhysics',
+  'createLiquidFluidState',
   'luminance',
   'glassContrast',
   'chooseGlassInk',

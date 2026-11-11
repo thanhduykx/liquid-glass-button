@@ -118,6 +118,9 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
     lipGlow: gl.getUniformLocation(program, 'lipGlow'),
     bevelIntensity: gl.getUniformLocation(program, 'bevelIntensity'),
     fresnelStrength: gl.getUniformLocation(program, 'fresnelStrength'),
+    transmittance: gl.getUniformLocation(program, 'transmittance'),
+    dispersion: gl.getUniformLocation(program, 'dispersion'),
+    causticStrength: gl.getUniformLocation(program, 'causticStrength'),
   }
 
   return {
@@ -155,6 +158,15 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
       gl.uniform1f(uniforms.lipGlow, optics.lipGlow ?? 1.0)
       gl.uniform1f(uniforms.bevelIntensity, optics.bevelIntensity ?? 1.0)
       gl.uniform1f(uniforms.fresnelStrength, optics.fresnelStrength ?? 0.48)
+
+      // Optical transmission mode: 'clear' ("Trong suốt") vs 'tinted' ("Phủ màu")
+      let defaultTransmittance = 0.52
+      if (optics.mode === 'clear') defaultTransmittance = 0.82
+      else if (optics.mode === 'tinted') defaultTransmittance = 0.18
+
+      gl.uniform1f(uniforms.transmittance, optics.transmittance ?? defaultTransmittance)
+      gl.uniform1f(uniforms.dispersion, optics.dispersion ?? 1.0)
+      gl.uniform1f(uniforms.causticStrength, optics.causticStrength ?? 1.0)
 
       gl.drawArrays(gl.TRIANGLES, 0, 3)
 

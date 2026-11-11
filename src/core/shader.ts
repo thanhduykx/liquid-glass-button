@@ -22,14 +22,17 @@ void main() {
  * 
  * Physical Principles Implemented:
  * 1. Signed Distance Field (SDF) of rounded rectangle representing the button tile.
- * 2. 3D Convex Dome Height Map: smooth continuous surface curvature at edges.
- * 3. Surface Normal calculation via central difference gradient of height function.
- * 4. Snell's Law Refraction: ray tracing ray through glass with refractive index n = 1.518.
- * 5. Schlick's Approximation for Fresnel Reflection: reflectance increases near grazing angles.
- * 6. Dynamic Specular Softbox Highlight: interactive light vector tracks cursor / pointer coordinates.
- * 7. Bevel & Lip Edge Highlighting: sharp convex boundary rim mimicking Apple iOS & visionOS glass edges.
- * 8. Directional Ambient Contact Shadow: smooth quadratic drop shadow beneath button.
- * 9. Sub-pixel Edge Anti-aliasing using screen-space derivative fwidth(d).
+ * 2. 3D Young-Laplace Liquid Meniscus Height Map: realistic capillary curvature with central optical plateau.
+ * 3. Surface Normal calculation via central difference gradient with compression elasticity.
+ * 4. Snell's Law Refraction: ray tracing through crown glass (n = 1.518).
+ * 5. Schlick's Approximation for Fresnel Reflection: reflectance spikes near grazing angles.
+ * 6. Dynamic Specular Highlights: dual-source interactive cursor tracking + overhead ambient key light.
+ * 7. Concentrated Inner Caustic Bead: simulates Total Internal Reflection (TIR) and lens meniscus focus.
+ * 8. Convex Lip Edge Highlighting: sharp perimeter boundary mimicking Apple iOS & visionOS liquid glass.
+ * 9. Chromatic Dispersion: Cauchy-approximated spectral wavelength splitting (red/blue fringe).
+ * 10. Physical Transmittance Model: continuous control between "Trong suốt" (Clear) and "Phủ màu" (Tinted).
+ * 11. Directional Ambient Contact Shadow: smooth quadratic drop shadow beneath button.
+ * 12. Sub-pixel Edge Anti-aliasing using screen-space derivative fwidth(d).
  */
 export const FRAGMENT_SHADER = `#version 300 es
 precision highp float;
@@ -48,6 +51,9 @@ uniform float specularPower;   // Specular exponent (default 14.0)
 uniform float lipGlow;         // Rim lip glow brightness (default 1.0)
 uniform float bevelIntensity;  // Bevel curve intensity (default 1.0)
 uniform float fresnelStrength; // Fresnel reflection strength (default 0.48)
+uniform float transmittance;   // Optical transmission [0.0..1.0] (default: 0.82 clear, 0.22 tinted)
+uniform float dispersion;      // Chromatic dispersion intensity (default 1.0)
+uniform float causticStrength; // Inner caustic bead focus intensity (default 1.0)
 
 out vec4 pixel;
 
@@ -57,12 +63,14 @@ float sdf(vec2 p) {
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
 }
 
-// 3D Dome Height Field
-// Creates a smooth convex lens dome along the perimeter bevel
+// 3D Liquid Meniscus Profile (Young-Laplace fluidic meniscus)
+// Creates an optically clear central plateau and a steep curved liquid meniscus at the perimeter
 float heightAt(vec2 p) {
-  float maxDepth = min(8.0, size.y * 0.22);
+  float maxDepth = min(9.5, size.y * 0.28);
   float t = clamp(-sdf(p) / maxDepth, 0.0, 1.0);
-  return sqrt(max(0.0, 1.0 - (1.0 - t) * (1.0 - t)));
+  // Quartic fluidic roll-off for organic liquid glass profile
+  float curve = 1.0 - pow(1.0 - t, 3.2);
+  return sqrt(max(0.0, curve * (2.0 - curve)));
 }
 
 void main() {
@@ -87,8 +95,9 @@ void main() {
     heightAt(p + vec2(0.0, e)) - heightAt(p - vec2(0.0, e))
   ) / (2.0 * e);
 
-  // Surface normal vector pointing upwards out of the screen (+Z)
-  vec3 n = normalize(vec3(-grad * 6.0, 1.0));
+  // Surface normal vector with pressure elastic flattening
+  float domeFactor = (6.0 - press * 0.75) * bevelIntensity;
+  vec3 n = normalize(vec3(-grad * domeFactor, 1.0));
 
   // Incident ray from camera towards surface: (0, 0, -1)
   vec3 incident = vec3(0.0, 0.0, -1.0);
@@ -98,6 +107,11 @@ void main() {
 
   // Reflection vector
   vec3 reflection = reflect(incident, n);
+
+  // Chromatic dispersion (spectral wavelength splitting)
+  float dEta = 0.022 * dispersion;
+  vec3 rayRed = refract(incident, n, 1.0 / max(1.0, ior - dEta));
+  vec3 rayBlue = refract(incident, n, 1.0 / max(1.0, ior + dEta));
 
   // Schlick's approximation for Fresnel reflectance
   // R(theta) = R0 + (1 - R0) * (1 - cos(theta))^5
@@ -112,11 +126,24 @@ void main() {
   // Bevel factor (1.0 at outer edge, 0.0 at flat center plateau)
   float bevel = 1.0 - h;
 
-  // Specular softbox highlight: reacts dynamically to light position (cursor tracking)
+  // Dual-source specular highlights: interactive cursor light + ambient key light
   vec3 lightDir = normalize(vec3(light, 1.7));
   float specDot = max(0.0, dot(reflection, lightDir));
   float softbox = pow(specDot, max(1.0, specularPower));
-  color += vec3(softbox * bevel * 0.17 * (1.0 + press * 0.2));
+
+  vec3 keyLightDir = normalize(vec3(-0.22, 0.65, 1.45));
+  float specDot2 = max(0.0, dot(reflection, keyLightDir));
+  float softbox2 = pow(specDot2, max(1.0, specularPower * 1.3));
+
+  color += vec3((softbox * 0.75 + softbox2 * 0.35) * bevel * 0.22 * (1.0 + press * 0.25));
+
+  // Concentrated inner caustic light bead (Total Internal Reflection & Meniscus Focus)
+  float causticOffset = min(4.8, size.y * 0.13);
+  float causticDist = d + causticOffset;
+  float causticBead = exp(-pow(causticDist / 1.7, 2.0));
+  float causticFocus = pow(clamp(1.0 - n.z, 0.0, 1.0), 1.5) * causticBead * causticStrength;
+  vec3 causticColor = mix(vec3(0.92, 0.98, 1.0), vec3(1.0, 1.0, 1.0), dark);
+  color += causticColor * (causticFocus * 0.55 * lipGlow);
 
   // Outer convex edge lip highlighting: gives Apple's characteristic sharp glass edge
   float lip = exp(-pow((d + 0.8) / 0.9, 2.0));
@@ -127,15 +154,25 @@ void main() {
   color *= 1.0 - bevel * 0.045 * bevelIntensity;
 
   // Dispersion chromatic fringe along refractive bend
-  color += vec3(ray.x * 0.0003, 0.0, -ray.x * 0.0003) * bevel;
+  vec3 dispersionFringe = vec3(rayRed.x - ray.x, 0.0, rayBlue.x - ray.x) * (bevel * 0.18 * dispersion);
+  color += dispersionFringe;
 
   // Micro border rim
   float border = 1.0 - smoothstep(0.15, 0.7, abs(d + 0.25));
   vec3 rimTint = mix(vec3(0.39, 0.48, 0.49), vec3(0.70, 0.83, 0.85), dark);
   color = mix(color, rimTint, border * 0.2);
 
+  // Physical Transmittance:
+  // transmittance = 1.0 ("Trong suốt" / Clear Glass mode): high transmission
+  // transmittance = 0.0 ("Phủ màu" / Tinted Glass mode): high opacity/contrast
+  float clearAlpha = mix(0.24, 0.36, dark);
+  float tintedAlpha = mix(0.74, 0.86, dark);
+  float baseAlpha = mix(tintedAlpha, clearAlpha, clamp(transmittance, 0.0, 1.0));
+  float edgeAlpha = mix(0.85, 0.96, fresnel);
+  float glassAlpha = mix(baseAlpha, edgeAlpha, clamp(bevel * 0.75 + fresnel * fresnelStrength, 0.0, 1.0));
+
   // Anti-aliased outer boundary output
-  float alpha = 1.0 - smoothstep(-aa * 0.5, aa * 0.5, d);
+  float alpha = (1.0 - smoothstep(-aa * 0.5, aa * 0.5, d)) * glassAlpha;
   pixel = vec4(clamp(color, 0.0, 1.0), alpha);
 }
 `

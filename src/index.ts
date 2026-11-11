@@ -25,7 +25,15 @@ export {
   mix,
   cssColor,
 } from './core/paint'
-export { stepSpring, createSpring, type SpringState } from './core/physics'
+export {
+  stepSpring,
+  createSpring,
+  stepLiquidPhysics,
+  createLiquidFluidState,
+  type SpringState,
+  type LiquidFluidState,
+  type LiquidPhysicsConfig,
+} from './core/physics'
 export { VERTEX_SHADER, FRAGMENT_SHADER } from './core/shader'
 
 // TypeScript Types

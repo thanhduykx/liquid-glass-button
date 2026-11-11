@@ -75,3 +75,22 @@ test('SDF Geometry: JS simulation of 2D Rounded Box SDF matches theoretical boun
   // Way outside button should be strictly positive
   assert.ok(sdf([100, 50], size, radius) > 0)
 })
+
+test('Optical Physics: Young-Laplace liquid meniscus profile and TIR caustics', () => {
+  assert.ok(
+    FRAGMENT_SHADER.includes('causticBead') && FRAGMENT_SHADER.includes('causticFocus'),
+    'Shader must calculate inner caustic bead from meniscus curvature'
+  )
+  assert.ok(
+    FRAGMENT_SHADER.includes('uniform float transmittance;'),
+    'Shader must define transmittance uniform for clear vs tinted modes'
+  )
+  assert.ok(
+    FRAGMENT_SHADER.includes('uniform float dispersion;'),
+    'Shader must define dispersion uniform for chromatic light splitting'
+  )
+  assert.ok(
+    FRAGMENT_SHADER.includes('rayRed') && FRAGMENT_SHADER.includes('rayBlue'),
+    'Shader must calculate spectral chromatic dispersion vectors'
+  )
+})

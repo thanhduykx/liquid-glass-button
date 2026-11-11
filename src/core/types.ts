@@ -36,6 +36,14 @@ export interface GlassOpticsConfig {
   lipGlow?: number
   /** Fresnel reflection strength (default: 0.48) */
   fresnelStrength?: number
+  /** Optical transmission mode: 'clear' ('trong suốt') or 'tinted' ('phủ màu') */
+  mode?: 'clear' | 'tinted'
+  /** Physical transmittance [0.0..1.0] (default: 0.82 for clear glass, 0.22 for tinted) */
+  transmittance?: number
+  /** Chromatic dispersion splitting factor (default: 1.0) */
+  dispersion?: number
+  /** Inner caustic bead focus intensity (default: 1.0) */
+  causticStrength?: number
 }
 
 /**
