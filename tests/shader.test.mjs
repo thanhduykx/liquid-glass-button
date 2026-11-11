@@ -93,4 +93,16 @@ test('Optical Physics: Young-Laplace liquid meniscus profile and TIR caustics', 
     FRAGMENT_SHADER.includes('rayRed') && FRAGMENT_SHADER.includes('rayBlue'),
     'Shader must calculate spectral chromatic dispersion vectors'
   )
+  assert.ok(
+    FRAGMENT_SHADER.includes('uniform vec2 shear;'),
+    'Shader must support 2D lateral fluid shear displacement'
+  )
+  assert.ok(
+    FRAGMENT_SHADER.includes('uniform int u_hasTrack;') && FRAGMENT_SHADER.includes('sdfTrackBox'),
+    'Shader must calculate Snell refraction over underlying switch track'
+  )
+  assert.ok(
+    FRAGMENT_SHADER.includes('uniform sampler2D u_backdrop;'),
+    'Shader must support texture backdrop sampling for real-time scene refraction'
+  )
 })

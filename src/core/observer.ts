@@ -1,6 +1,6 @@
 import { createButtonGlassRenderer, type ButtonGlassRenderer } from './renderer'
 import { createButtonPaintReader, cssColor } from './paint'
-import { stepSpring } from './physics'
+import { stepSpring, stepLiquidPhysics, createLiquidFluidState } from './physics'
 import type { ButtonFaceTile, LiquidGlassControllerOptions } from './types'
 
 export const DEFAULT_SELECTOR = 'button.liquid-glass-btn, [data-liquid-glass], button[data-glass]'
@@ -128,17 +128,28 @@ export class LiquidGlassController {
         const normX = (event.clientX - rect.left) / Math.max(1, rect.width) - 0.5
         const normY = 0.8 - ((event.clientY - rect.top) / Math.max(1, rect.height)) * 0.3
         face.light = [normX, normY]
+
+        if (face.lastPointer) {
+          const deltaX = (event.clientX - face.lastPointer[0]) / Math.max(1, rect.width)
+          const deltaY = (event.clientY - face.lastPointer[1]) / Math.max(1, rect.height)
+          face.targetForce = [
+            Math.max(-1.5, Math.min(1.5, deltaX * 18.0)),
+            Math.max(-1.5, Math.min(1.5, -deltaY * 18.0)),
+          ]
+        }
+        face.lastPointer = [event.clientX, event.clientY]
       }
 
-      face.until = performance.now() + 180
+      face.until = performance.now() + 220
       this.schedule()
     }
 
     const release = () => {
       for (const face of this.faces.values()) {
+        face.lastPointer = null
         if (face.target) {
           face.target = 0
-          face.until = performance.now() + 250
+          face.until = performance.now() + 280
         }
       }
       this.schedule()
@@ -213,6 +224,9 @@ export class LiquidGlassController {
       target: 0,
       velocity: 0,
       until: 0,
+      fluid: createLiquidFluidState(0),
+      targetForce: [0, 0],
+      lastPointer: null,
     }
 
     this.faces.set(element, face)
@@ -310,13 +324,42 @@ export class LiquidGlassController {
 
       if (!face.paint || !face.width || !face.height) continue
 
-      // Step spring physics for button press/release
-      const spring = { current: face.pressed, target: face.target, velocity: face.velocity }
-      const stillSpringing = stepSpring(spring, dt, 300, 24)
-      face.pressed = spring.current
-      face.velocity = spring.velocity
+      // Step Young-Laplace visco-elastic liquid fluid physics with 2D lateral shear
+      if (!face.fluid) {
+        face.fluid = createLiquidFluidState(face.pressed)
+      }
+      face.fluid.target = face.target
 
-      if (this.renderer?.draw(face.canvas, face.width, face.height, face.paint, face.pressed, face.light)) {
+      const targetForce = face.targetForce || [0, 0]
+      const stillFluid = stepLiquidPhysics(face.fluid, dt, targetForce, {
+        stiffness: 320,
+        damping: 24,
+        surfaceTension: 0.88,
+        viscosity: 0.14,
+      })
+
+      // Damp interactive excitation force
+      if (face.targetForce) {
+        face.targetForce[0] *= 0.72
+        face.targetForce[1] *= 0.72
+        if (Math.abs(face.targetForce[0]) < 0.001) face.targetForce[0] = 0
+        if (Math.abs(face.targetForce[1]) < 0.001) face.targetForce[1] = 0
+      }
+
+      face.pressed = face.fluid.current
+      face.velocity = face.fluid.velocity
+
+      if (
+        this.renderer?.draw(
+          face.canvas,
+          face.width,
+          face.height,
+          face.paint,
+          face.pressed,
+          face.light,
+          face.fluid.deformation
+        )
+      ) {
         element.dataset.glassButtonReady = ''
       } else {
         delete element.dataset.glassButtonReady
@@ -324,7 +367,7 @@ export class LiquidGlassController {
         continue
       }
 
-      if (stillSpringing || face.until > now) {
+      if (stillFluid || face.until > now) {
         needsNextFrame = true
       }
     }

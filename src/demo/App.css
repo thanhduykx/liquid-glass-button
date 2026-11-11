@@ -293,7 +293,7 @@ body {
 .phone-scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding: 0 16px 140px;
+  padding: 0 16px 180px;
   scroll-behavior: smooth;
 }
 
@@ -393,38 +393,95 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(251, 251, 253, 0.94);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  padding: 14px 18px 22px;
+  background: #fbfbfd;
+  padding: 14px 18px 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   z-index: 25;
 }
 
 [data-theme='dark'] .ios-slider-panel {
-  background: rgba(24, 24, 28, 0.94);
+  background: #18181c;
   border-top-color: rgba(255, 255, 255, 0.1);
 }
 
-.slider-track-container {
+.ios-segmented-slider-track {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
-.slider-icon {
+.ios-slider-icon-btn {
+  background: none;
+  border: none;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #86868b;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s ease;
 }
 
-.ios-range-slider {
-  flex: 1;
+.ios-slider-icon-btn.active {
+  color: #1d1d1f;
+}
+
+[data-theme='dark'] .ios-slider-icon-btn.active {
+  color: #f5f5f7;
+}
+
+.ios-slider-pill-bar {
+  position: relative;
+  width: 184px;
   height: 28px;
-  accent-color: #0071e3;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
   cursor: pointer;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] .ios-slider-pill-bar {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ios-slider-divider-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #8e8e93;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ios-slider-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 88px;
+  height: 24px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+  transition: transform 0.28s cubic-bezier(0.2, 0.85, 0.25, 1);
+  z-index: 2;
+}
+
+[data-theme='dark'] .ios-slider-thumb {
+  background: #3a3a3c;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.ios-slider-thumb.right {
+  transform: translateX(92px);
 }
 
 .slider-vietnamese-caption {
@@ -432,6 +489,8 @@ body {
   color: #86868b;
   line-height: 1.45;
   text-align: center;
+  max-width: 320px;
+  margin: 0 auto;
 }
 
 /* Controls alongside phone mockup */

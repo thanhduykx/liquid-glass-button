@@ -191,3 +191,77 @@
     display: none !important;
   }
 }
+
+/* Authentic Apple Liquid Glass Toggle Switch */
+.liquid-glass-toggle-wrap {
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  outline: none;
+}
+
+.liquid-glass-toggle-wrap:focus-visible {
+  outline: 2px solid var(--liquid-glass-accent);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+.liquid-glass-toggle-track {
+  position: relative;
+  width: 76px;
+  height: 42px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+[data-theme='dark'] .liquid-glass-toggle-track {
+  background-color: #2c2c2e;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.liquid-glass-toggle-inner-bar {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background-color: #e5e5ea;
+  transition: background-color 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-theme='dark'] .liquid-glass-toggle-inner-bar {
+  background-color: #3a3a3c;
+}
+
+.liquid-glass-toggle-wrap.active .liquid-glass-toggle-inner-bar {
+  background-color: #34c759;
+}
+
+.liquid-glass-toggle-knob {
+  position: absolute !important;
+  top: 3px !important;
+  left: 3px !important;
+  width: 44px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  transition: transform 0.28s cubic-bezier(0.18, 0.89, 0.32, 1.15) !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14) !important;
+}
+
+.liquid-glass-toggle-wrap.active .liquid-glass-toggle-knob {
+  transform: translateX(26px) !important;
+}
+
+.liquid-glass-toggle-wrap.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

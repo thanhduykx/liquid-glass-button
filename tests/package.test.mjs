@@ -8,6 +8,7 @@ const cjsModule = require('../dist/index.cjs')
 
 const EXPECTED_EXPORTS = [
   'LiquidGlassButton',
+  'LiquidGlassToggle',
   'LiquidGlassEffects',
   'LiquidGlassController',
   'DEFAULT_SELECTOR',

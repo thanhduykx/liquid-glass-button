@@ -224,7 +224,29 @@ export default function App() {
 }
 ```
 
-### 3. Viscous Fluid Physics Simulation
+### 3. Apple Liquid Glass Toggle Switch
+
+Authentic refractive liquid glass capsule knob sliding over an active colored track with Snell refraction and Young-Laplace meniscus:
+
+```tsx
+import { useState } from 'react'
+import { LiquidGlassToggle } from 'liquid-glass-button'
+import 'liquid-glass-button/style.css'
+
+export function Settings() {
+  const [active, setActive] = useState(true)
+
+  return (
+    <LiquidGlassToggle
+      checked={active}
+      onChange={setActive}
+      ariaLabel="Liquid Glass Switch"
+    />
+  )
+}
+```
+
+### 4. Viscous Fluid Physics Simulation
 
 ```typescript
 import { createLiquidFluidState, stepLiquidPhysics } from 'liquid-glass-button'

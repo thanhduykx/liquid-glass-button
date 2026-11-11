@@ -11,6 +11,7 @@ export interface ButtonGlassRenderer {
    * @param paint Evaluated optical paint properties (face, scene, radius, dark)
    * @param pressed Current spring press intensity [0.0..1.0]
    * @param light Normalized light direction vector [x, y]
+   * @param shear Visco-elastic fluid shear displacement [dx, dy]
    * @returns true if draw succeeded, false if context was lost or failed
    */
   draw(
@@ -19,7 +20,8 @@ export interface ButtonGlassRenderer {
     height: number,
     paint: ButtonGlassPaint,
     pressed: number,
-    light: [number, number]
+    light: [number, number],
+    shear?: [number, number]
   ): boolean
 
   /**
@@ -56,6 +58,7 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
   }
 
   const shaders: WebGLShader[] = []
+  const backdropTexture = gl.createTexture()
   let lost = false
 
   const contextLost = (event: Event) => {
@@ -68,6 +71,7 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
     surface.removeEventListener('webglcontextlost', contextLost)
     if (!gl.isContextLost()) {
       shaders.forEach((shader) => gl.deleteShader(shader))
+      if (backdropTexture) gl.deleteTexture(backdropTexture)
       gl.deleteProgram(program)
       gl.deleteVertexArray(vao)
     }
@@ -121,10 +125,18 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
     transmittance: gl.getUniformLocation(program, 'transmittance'),
     dispersion: gl.getUniformLocation(program, 'dispersion'),
     causticStrength: gl.getUniformLocation(program, 'causticStrength'),
+    shear: gl.getUniformLocation(program, 'shear'),
+    u_hasBackdrop: gl.getUniformLocation(program, 'u_hasBackdrop'),
+    u_backdrop: gl.getUniformLocation(program, 'u_backdrop'),
+    u_hasTrack: gl.getUniformLocation(program, 'u_hasTrack'),
+    u_trackConfig: gl.getUniformLocation(program, 'u_trackConfig'),
+    u_trackRadius: gl.getUniformLocation(program, 'u_trackRadius'),
+    u_trackColor: gl.getUniformLocation(program, 'u_trackColor'),
+    u_trackBgColor: gl.getUniformLocation(program, 'u_trackBgColor'),
   }
 
   return {
-    draw(target, width, height, paint, pressed, light) {
+    draw(target, width, height, paint, pressed, light, shear = [0, 0]) {
       if (lost || gl.isContextLost()) return false
 
       // Device pixel ratio clamped for efficiency
@@ -150,6 +162,7 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
       gl.uniform1f(uniforms.press, pressed)
       gl.uniform1f(uniforms.dark, paint.dark ? 1 : 0)
       gl.uniform2f(uniforms.light, light[0], light[1])
+      gl.uniform2f(uniforms.shear, shear[0] || 0, shear[1] || 0)
 
       // Physical optics parameters (default to optical crown glass standard)
       const optics = paint.optics || {}
@@ -167,6 +180,43 @@ export function createButtonGlassRenderer(onContextLost?: () => void): ButtonGla
       gl.uniform1f(uniforms.transmittance, optics.transmittance ?? defaultTransmittance)
       gl.uniform1f(uniforms.dispersion, optics.dispersion ?? 1.0)
       gl.uniform1f(uniforms.causticStrength, optics.causticStrength ?? 1.0)
+
+      // Underlying track refraction (for authentic liquid glass toggle switches)
+      if (optics.track) {
+        gl.uniform1i(uniforms.u_hasTrack, 1)
+        gl.uniform4f(
+          uniforms.u_trackConfig,
+          optics.track.size[0],
+          optics.track.size[1],
+          optics.track.offset[0],
+          optics.track.offset[1]
+        )
+        gl.uniform1f(uniforms.u_trackRadius, optics.track.radius)
+        gl.uniform3f(uniforms.u_trackColor, optics.track.color[0], optics.track.color[1], optics.track.color[2])
+        gl.uniform3f(
+          uniforms.u_trackBgColor,
+          optics.track.bgColor[0],
+          optics.track.bgColor[1],
+          optics.track.bgColor[2]
+        )
+      } else {
+        gl.uniform1i(uniforms.u_hasTrack, 0)
+      }
+
+      // Real-time backdrop scene refraction
+      if (optics.backdropCanvas && backdropTexture) {
+        gl.uniform1i(uniforms.u_hasBackdrop, 1)
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, backdropTexture)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, optics.backdropCanvas)
+        gl.uniform1i(uniforms.u_backdrop, 0)
+      } else {
+        gl.uniform1i(uniforms.u_hasBackdrop, 0)
+      }
 
       gl.drawArrays(gl.TRIANGLES, 0, 3)
 

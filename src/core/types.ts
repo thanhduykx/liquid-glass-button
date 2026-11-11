@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { LiquidFluidState } from './physics'
 
 /** Color tuple in normalized [r, g, b, a] range (0.0 to 1.0) */
 export type RGBA = [number, number, number, number]
@@ -23,6 +24,22 @@ export interface ButtonGlassPaint {
 }
 
 /**
+ * Track geometry and colors for liquid toggle switches.
+ */
+export interface LiquidTrackConfig {
+  /** Width and height of the track in CSS pixels [width, height] */
+  size: [number, number]
+  /** Center offset [offsetX, offsetY] from button center in CSS pixels */
+  offset: [number, number]
+  /** Corner radius of the track */
+  radius: number
+  /** Active track color [r, g, b] (0.0 to 1.0) */
+  color: RGB
+  /** Background color outside track [r, g, b] (0.0 to 1.0) */
+  bgColor: RGB
+}
+
+/**
  * Physical optics configuration parameters for the WebGL2 glass shader.
  */
 export interface GlassOpticsConfig {
@@ -44,6 +61,10 @@ export interface GlassOpticsConfig {
   dispersion?: number
   /** Inner caustic bead focus intensity (default: 1.0) */
   causticStrength?: number
+  /** Underlying track geometry and colors for liquid toggle switches */
+  track?: LiquidTrackConfig
+  /** Optional offscreen canvas or image containing backdrop scene for real Snell refraction */
+  backdropCanvas?: HTMLCanvasElement | HTMLImageElement | null
 }
 
 /**
@@ -94,6 +115,12 @@ export interface ButtonFaceTile {
   target: number
   velocity: number
   until: number
+  /** Visco-elastic liquid fluid state for 2D Young-Laplace shear physics */
+  fluid?: LiquidFluidState
+  /** Dynamic lateral excitation force from pointer movement */
+  targetForce?: [number, number]
+  /** Previous pointer coordinates for delta calculation */
+  lastPointer?: [number, number] | null
 }
 
 /**

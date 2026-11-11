@@ -55,6 +55,18 @@ uniform float transmittance;   // Optical transmission [0.0..1.0] (default: 0.82
 uniform float dispersion;      // Chromatic dispersion intensity (default 1.0)
 uniform float causticStrength; // Inner caustic bead focus intensity (default 1.0)
 
+// 2D Lateral Fluid Shear Displacement from Young-Laplace Surface Tension
+uniform vec2 shear;
+
+// Physical Track & Scene Refraction (Snell's Law ray displacement)
+uniform int u_hasBackdrop;
+uniform sampler2D u_backdrop;
+uniform int u_hasTrack;
+uniform vec4 u_trackConfig;   // [width, height, offsetX, offsetY]
+uniform float u_trackRadius;
+uniform vec3 u_trackColor;
+uniform vec3 u_trackBgColor;
+
 out vec4 pixel;
 
 // 2D Rounded Box Signed Distance Field (SDF)
@@ -63,11 +75,19 @@ float sdf(vec2 p) {
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
 }
 
+// 2D Rounded Box SDF for underlying track geometry
+float sdfTrackBox(vec2 pTrack, vec2 tSize, float tRad) {
+  vec2 q = abs(pTrack) - tSize * 0.5 + tRad;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - tRad;
+}
+
 // 3D Liquid Meniscus Profile (Young-Laplace fluidic meniscus)
-// Creates an optically clear central plateau and a steep curved liquid meniscus at the perimeter
+// Creates an optically clear central plateau and a steep curved liquid meniscus at the perimeter.
+// Also incorporates dynamic shear displacement from visco-elastic fluid motion.
 float heightAt(vec2 p) {
   float maxDepth = min(9.5, size.y * 0.28);
-  float t = clamp(-sdf(p) / maxDepth, 0.0, 1.0);
+  vec2 pShear = p - shear * min(size.y * 0.35, 12.0);
+  float t = clamp(-sdf(pShear) / maxDepth, 0.0, 1.0);
   // Quartic fluidic roll-off for organic liquid glass profile
   float curve = 1.0 - pow(1.0 - t, 3.2);
   return sqrt(max(0.0, curve * (2.0 - curve)));
@@ -119,9 +139,64 @@ void main() {
   float cosTheta = 1.0 - n.z;
   float fresnel = 0.04 + 0.96 * pow(cosTheta, 5.0);
 
+  // Physical Snell Ray Displacement Vector through the convex meniscus lens
+  float rayDepth = (h * 0.22 + 0.04) * size.y * bevelIntensity;
+  vec2 rayOffset = ray.xy * rayDepth;
+  vec2 rayOffsetR = rayRed.xy * (rayDepth * 1.08);
+  vec2 rayOffsetB = rayBlue.xy * (rayDepth * 0.92);
+
+  // Optical backdrop scene evaluation
+  vec3 refractedBackdrop = scene;
+  bool customRefraction = false;
+
+  if (u_hasTrack == 1) {
+    vec2 tSize = u_trackConfig.xy;
+    vec2 tOffset = u_trackConfig.zw;
+    float tRad = u_trackRadius;
+
+    vec2 pR = p + rayOffsetR - tOffset;
+    vec2 pG = p + rayOffset - tOffset;
+    vec2 pB = p + rayOffsetB - tOffset;
+
+    float dR = sdfTrackBox(pR, tSize, tRad);
+    float dG = sdfTrackBox(pG, tSize, tRad);
+    float dB = sdfTrackBox(pB, tSize, tRad);
+
+    float aaTrack = 0.7;
+    float maskR = 1.0 - smoothstep(-aaTrack, aaTrack, dR);
+    float maskG = 1.0 - smoothstep(-aaTrack, aaTrack, dG);
+    float maskB = 1.0 - smoothstep(-aaTrack, aaTrack, dB);
+
+    refractedBackdrop = vec3(
+      mix(u_trackBgColor.r, u_trackColor.r, maskR),
+      mix(u_trackBgColor.g, u_trackColor.g, maskG),
+      mix(u_trackBgColor.b, u_trackColor.b, maskB)
+    );
+    customRefraction = true;
+  } else if (u_hasBackdrop == 1) {
+    // Backdrop texture sampled with Snell refractive displacement and Cauchy dispersion
+    vec2 baseUv = gl_FragCoord.xy / resolution;
+    vec2 uvOffset = rayOffset / resolution;
+    vec2 uvOffsetR = rayOffsetR / resolution;
+    vec2 uvOffsetB = rayOffsetB / resolution;
+
+    vec3 sampleR = texture(u_backdrop, clamp(baseUv + uvOffsetR, 0.0, 1.0)).rgb;
+    vec3 sampleG = texture(u_backdrop, clamp(baseUv + uvOffset, 0.0, 1.0)).rgb;
+    vec3 sampleB = texture(u_backdrop, clamp(baseUv + uvOffsetB, 0.0, 1.0)).rgb;
+
+    refractedBackdrop = vec3(sampleR.r, sampleG.g, sampleB.b);
+    customRefraction = true;
+  }
+
   // Environmental ambient lighting transmission
   vec3 environment = mix(scene, vec3(1.0), 0.24 + 0.24 * max(0.0, reflection.y));
-  vec3 color = mix(face, environment, fresnel * fresnelStrength);
+  if (customRefraction) {
+    environment = mix(refractedBackdrop, vec3(1.0), 0.12 + 0.18 * max(0.0, reflection.y));
+  }
+
+  // Dual-mode transmission: Clear ("Trong suốt") vs Tinted ("Phủ màu")
+  vec3 transmission = mix(face, refractedBackdrop, clamp(transmittance, 0.0, 1.0));
+  vec3 color = mix(transmission, environment, fresnel * fresnelStrength);
 
   // Bevel factor (1.0 at outer edge, 0.0 at flat center plateau)
   float bevel = 1.0 - h;
@@ -165,10 +240,10 @@ void main() {
   // Physical Transmittance:
   // transmittance = 1.0 ("Trong suốt" / Clear Glass mode): high transmission
   // transmittance = 0.0 ("Phủ màu" / Tinted Glass mode): high opacity/contrast
-  float clearAlpha = mix(0.24, 0.36, dark);
-  float tintedAlpha = mix(0.74, 0.86, dark);
+  float clearAlpha = customRefraction ? 0.94 : mix(0.24, 0.36, dark);
+  float tintedAlpha = mix(0.82, 0.92, dark);
   float baseAlpha = mix(tintedAlpha, clearAlpha, clamp(transmittance, 0.0, 1.0));
-  float edgeAlpha = mix(0.85, 0.96, fresnel);
+  float edgeAlpha = mix(0.86, 0.98, fresnel);
   float glassAlpha = mix(baseAlpha, edgeAlpha, clamp(bevel * 0.75 + fresnel * fresnelStrength, 0.0, 1.0));
 
   // Anti-aliased outer boundary output

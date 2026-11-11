@@ -12,6 +12,7 @@ import './styles/liquid-glass.css'
 
 // React Components
 export { LiquidGlassButton } from './components/LiquidGlassButton'
+export { LiquidGlassToggle, type LiquidGlassToggleProps } from './components/LiquidGlassToggle'
 export { LiquidGlassEffects, type LiquidGlassEffectsProps } from './components/LiquidGlassEffects'
 
 // Core Controller & Engine
@@ -42,6 +43,7 @@ export type {
   RGB,
   ButtonGlassPaint,
   GlassOpticsConfig,
+  LiquidTrackConfig,
   LiquidGlassVariant,
   LiquidGlassSize,
   LiquidGlassButtonProps,
