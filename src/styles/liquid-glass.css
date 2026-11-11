@@ -1,0 +1,193 @@
+/**
+ * Liquid Glass Button Stylesheet
+ * 
+ * Developed by Duong Thanh Duy (@thanhduykx)
+ * Re-developed based on Apple Liquid Glass & HIG Materials
+ */
+
+:root {
+  --liquid-glass-radius: 999px;
+  --liquid-glass-ink: #18343e;
+  --liquid-glass-base: rgba(255, 255, 255, 0.85);
+  --liquid-glass-accent: #0071e3;
+  --liquid-glass-focus-ring: rgba(0, 113, 227, 0.45);
+}
+
+[data-theme='dark'] {
+  --liquid-glass-ink: #f0f7fa;
+  --liquid-glass-base: rgba(28, 28, 30, 0.85);
+  --liquid-glass-accent: #2997ff;
+  --liquid-glass-focus-ring: rgba(41, 151, 255, 0.5);
+}
+
+/* Base button geometry and typography */
+.liquid-glass-btn,
+[data-liquid-glass] {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  border-radius: var(--liquid-glass-radius, 999px);
+  border: 1px solid transparent;
+  outline: none;
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease;
+  background-color: var(--liquid-glass-base);
+  color: var(--liquid-glass-ink);
+}
+
+/* Sizing presets */
+.liquid-glass-btn--sm {
+  min-height: 32px;
+  padding: 6px 14px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.liquid-glass-btn--md {
+  min-height: 44px;
+  padding: 10px 22px;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.liquid-glass-btn--lg {
+  min-height: 52px;
+  padding: 14px 28px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+/* Glass shader active canvas tile styling */
+:is(html:root body, html:root #root) [data-glass-button-position] {
+  position: relative;
+}
+
+:is(html:root body, html:root #root) [data-glass-button-ready] {
+  isolation: isolate;
+  color: var(--button-glass-ink, var(--liquid-glass-ink)) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* Canvas surface positioned directly beneath button contents */
+.button-glass__surface {
+  position: absolute !important;
+  left: -12px !important;
+  top: -12px !important;
+  width: calc(100% + 24px) !important;
+  height: calc(100% + 24px) !important;
+  max-width: none !important;
+  max-height: none !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  border-radius: 0 !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Interactive feedback */
+.liquid-glass-btn:hover:not(:disabled) {
+  transform: translateY(-0.5px);
+}
+
+.liquid-glass-btn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.liquid-glass-btn:focus-visible {
+  outline: 3px solid var(--liquid-glass-focus-ring);
+  outline-offset: 2px;
+}
+
+.liquid-glass-btn:disabled,
+.liquid-glass-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* Semantic Variants */
+.liquid-glass-btn--primary {
+  background-color: rgba(0, 113, 227, 0.18);
+  color: #0071e3;
+}
+
+[data-theme='dark'] .liquid-glass-btn--primary {
+  background-color: rgba(41, 151, 255, 0.22);
+  color: #2997ff;
+}
+
+.liquid-glass-btn--accent {
+  background-color: rgba(48, 209, 88, 0.18);
+  color: #248a3d;
+}
+
+[data-theme='dark'] .liquid-glass-btn--accent {
+  background-color: rgba(48, 209, 88, 0.24);
+  color: #30d158;
+}
+
+.liquid-glass-btn--danger {
+  background-color: rgba(255, 59, 48, 0.16);
+  color: #d70015;
+}
+
+[data-theme='dark'] .liquid-glass-btn--danger {
+  background-color: rgba(255, 69, 58, 0.22);
+  color: #ff453a;
+}
+
+.liquid-glass-btn--ghost {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* Solid fallback when WebGL2 is lost, unavailable, or disabled */
+:is(html:root body, html:root #root) [data-glass-button-fallback] {
+  background-color: var(--button-glass-base, var(--liquid-glass-base)) !important;
+  color: var(--button-glass-ink, var(--liquid-glass-ink)) !important;
+  background-image: none !important;
+  border: 1px solid rgba(128, 128, 128, 0.2) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-glass-button-fallback] > .button-glass__surface {
+  display: none !important;
+}
+
+/* Accessibility: High contrast and reduced motion modes */
+@media (prefers-reduced-motion: reduce) {
+  .liquid-glass-btn,
+  [data-liquid-glass] {
+    transition: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .liquid-glass-btn,
+  [data-liquid-glass] {
+    forced-color-adjust: none;
+    background: ButtonFace !important;
+    color: ButtonText !important;
+    border: 2px solid ButtonBorder !important;
+  }
+  .button-glass__surface {
+    display: none !important;
+  }
+}

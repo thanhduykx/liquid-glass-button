@@ -1,0 +1,9 @@
+src/demo
+index.html
+tests
+dist-demo
+.github
+vite.config.ts
+vite.config.lib.ts
+tsconfig.json
+tsconfig.build.json

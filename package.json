@@ -1,0 +1,81 @@
+{
+  "name": "liquid-glass-button",
+  "version": "1.0.0",
+  "description": "Ultra-realistic refractive liquid glass button developed by Duong Thanh Duy (@thanhduykx), re-developed based on Apple Liquid Glass design & HIG Materials.",
+  "author": "Dương Thành Thanh Duy <60205284+thanhduykx@users.noreply.github.com> (https://github.com/thanhduykx)",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "style": "./dist/liquid-glass-button.css",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style.css": "./dist/liquid-glass-button.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thanhduykx/liquid-glass-button.git"
+  },
+  "homepage": "https://github.com/thanhduykx/liquid-glass-button#readme",
+  "bugs": {
+    "url": "https://github.com/thanhduykx/liquid-glass-button/issues"
+  },
+  "keywords": [
+    "liquid-glass",
+    "glassmorphism",
+    "apple",
+    "visionos",
+    "ios",
+    "webgl2",
+    "shader",
+    "refraction",
+    "fresnel",
+    "snell-law",
+    "react",
+    "react-button",
+    "button",
+    "ui-component",
+    "accessible",
+    "wcag"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --config vite.config.lib.ts && tsc -p tsconfig.build.json",
+    "build:demo": "vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  }
+}
